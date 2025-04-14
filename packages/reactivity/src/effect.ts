@@ -16,6 +16,15 @@ function preCleanEffect(effect) {
   // 每次执行id+1,如果当前effect执行的时候（同一个），id就是相同的
   effect._trackId++;
 }
+// 清理多余的
+function postCleanEffect(effect) {
+  if (effect.deps.length > effect._depsLength) {
+    for (let i = effect._depsLength; i < effect.deps.length; i++) {
+      cleanDepEffect(effect.deps[i], effect); // 删除映射表中的effect
+    }
+    effect.deps.length = effect._depsLength; // 更新依赖列表的长度
+  }
+}
 
 // 当前响应式函数
 export let activeEffect;
@@ -45,6 +54,7 @@ class ReactiveEffect {
 
       return this.fn(); // 依赖收集
     } finally {
+      postCleanEffect(this);
       // 当依赖收集结束，则不需要这个activeEffect了
       //   只收集effect的时候的对应的函数，
       activeEffect = lastEffect;
@@ -52,7 +62,7 @@ class ReactiveEffect {
   }
 }
 function cleanDepEffect(dep, effect) {
-  console.log(effect,'effect')
+  console.log(effect, "effect");
   dep.delete(effect);
   if (dep.size == 0) {
     dep.cleanup();
