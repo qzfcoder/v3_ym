@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      // import {
+      //   reactive,
+      //   effect,
+      // } from "/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js";
+
+      // 自己的
+      import { reactive, effect } from "./reactivity.js";
+      /**
+       *  reactive 让数据变成响应式的
+       * effect 副作用函数，让数据变化后可以让effect重写执行，组件、watch等都市通过这个来执行的
+       */
+      /**
+       * 分析
+       *  传入的是一个对象
+       */
+      let obj = {
+        name: "qqq",
+        age: 18,
+        flag: true,
+      };
+
+      let state = reactive(obj);
+
+      // // 防止代理过代理多次问题 start=======
+      // // 创建两次，不需要重新创建
+      // let state2 = reactive(obj);
+      // // 代理代理后的对象，也不需要再次代理
+      // // 如果被代理过，则一定有getset方法，
+      // // 则在内部增加一个变量，用于判断是否是代理过的对象
+      // let state3 = reactive(state);
+      // // 防止代理过代理多次问题 ending=======
+
+      // console.log(state, state.name);
+
+      // effect(() => {
+      //   app.innerHTML = `姓名${state.name}年龄${state.age}`;
+      // });
+
+      // {obj:{flag:{effect}, name:{flag}}}
+      //  {obj:{flag:{effect}, name:{flag}, age:{flag}}}
+      // 不需要收集name，需要把name给清理掉
+      // 需要来一个简易diff算法进行比对，删除name或者age 不存在的值
+      // 每次执行的时候都清理掉收集的
+      effect(() => {
+        console.log("run~");
+        app.innerHTML = state.flag ? `姓名${state.name}` : `年龄${state.age}`;
+      });
+
+      // effect(() => {
+      //   app.innerHTML = `第二次:姓名${state.name}`;
+      // });
+
+      setTimeout(() => {
+        state.flag = false;
+        // 重新渲染，当数据变化则需要执行
+        // _effect.run();
+        setTimeout(() => {
+          console.log("设置了name，name不监听状态");
+          state.name = "xiaoming";
+        });
+      }, 1000);
+
+      /**
+       *  try {
+       *    activeEffect = this;
+       *    return this.fn(); // 依赖收集
+       *  } finally {
+       *    // 当依赖收集结束，则不需要这个activeEffect了
+       *    //   只收集effect的时候的对应的函数，
+       *    activeEffect = undefined;
+       *  }
+       * 循环收集依赖。的时候
+       *  1. activeEffect = f1
+       *  2. activeEffect = f2
+       *  3. f2 执行完后，activeEffect = undefined
+       *  4. 在走f1中的age 的时候 执行完后，activeEffect 为undefined 收集不到了
+       * 解决方案，可以用栈的方式，数组，
+       * 1. activeEffect = [f1]
+       * 2. activeEffect = [f1, f2]
+       * 3. f2走完，弹出 activeEffect = [f1]
+       * 4. 在走的时候age的时候就能获取到了
+       *
+       * 目前方案，可以通过属性的方式更佳快
+       * 走一个的时候保存，结束的时候回复回去
+       *  let lastEffect = activeEffect
+       *  try {
+       *    activeEffect = this;
+       *    return this.fn(); // 依赖收集
+       *  } finally {
+       *    // 当依赖收集结束，则不需要这个activeEffect了
+       *    //   只收集effect的时候的对应的函数，
+       *    activeEffect = lastEffect;
+       *  }
+       */
+
+      // 测试多次收集依赖的,防止嵌套收集的activeEffect
+      // effect(() => {
+      //   // f1
+      //   console.log(state.name);
+      //   effect(() => {
+      //     // f2
+      //     console.log(state.name);
+      //     // effect(() => { // f3
+      //     //   console.log(state.name);
+      //     // });
+      //   });
+      //   console.log(state.age);
+      // });
+    </script>
+  </body>
+</html>
