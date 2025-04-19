@@ -3,12 +3,20 @@ export function effect(fn, options?) {
   // 创建一个响应式的effect，数据变化后会重新执行effect
   // 创建一个effect，只要依赖的属性变化了就要执行
   const _effect = new ReactiveEffect(fn, () => {
+    // 默认这个就是scheduler 调度器
     // 这个
     _effect.run();
   });
   // 进来默认就执行一次
   _effect.run();
-  return _effect;
+
+  if (options) {
+    Object.assign(_effect, options); // 用户传递的覆盖内置执行的
+    console.log("外部存在调度器后合并后的effect", _effect);
+  }
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+  return runner; // 外界可以自己走runner
 }
 
 function preCleanEffect(effect) {
@@ -34,7 +42,7 @@ class ReactiveEffect {
   deps = [];
   _depsLength = 0;
   public active = true; // 创建的effect 是响应式的
-
+  _running = 0;
   // fn用户编写的函数
   // scheduler 用户依赖数据发生变化后，需要重新调用的函数
   // 在构造函数参数前添加 public 关键字，不但定义了公共属性，还在创建类的实例时把传入的参数值赋给了这些属性。
@@ -51,9 +59,11 @@ class ReactiveEffect {
 
       // effect重新执行前，上一次依赖情况清空掉
       preCleanEffect(this);
-
+      this._running++;
       return this.fn(); // 依赖收集
     } finally {
+      this._running--;
+      console.log(this._running);
       postCleanEffect(this);
       // 当依赖收集结束，则不需要这个activeEffect了
       //   只收集effect的时候的对应的函数，
@@ -112,8 +122,11 @@ export function triggerEffects(dep) {
   // });
   // 执行副作用函数
   for (const effect of dep.keys()) {
-    if (effect.scheduler) {
-      effect.scheduler();
+    if (!effect._running) {
+      if (effect.scheduler) {
+        // 不是正在执行，才能执行
+        effect.scheduler();
+      }
     }
   }
 }

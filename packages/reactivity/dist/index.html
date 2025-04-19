@@ -14,7 +14,14 @@
       // } from "/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js";
 
       // 自己的
-      import { reactive, effect } from "./reactivity.js";
+      import {
+        reactive,
+        effect,
+        ref,
+        toRef,
+        toRefs,
+        proxyRefs,
+      } from "./reactivity.js";
       /**
        *  reactive 让数据变成响应式的
        * effect 副作用函数，让数据变化后可以让effect重写执行，组件、watch等都市通过这个来执行的
@@ -27,6 +34,7 @@
         name: "qqq",
         age: 18,
         flag: true,
+        address: { n: "as " },
       };
 
       let state = reactive(obj);
@@ -46,30 +54,74 @@
       //   app.innerHTML = `姓名${state.name}年龄${state.age}`;
       // });
 
-      // {obj:{flag:{effect}, name:{flag}}}
-      //  {obj:{flag:{effect}, name:{flag}, age:{flag}}}
-      // 不需要收集name，需要把name给清理掉
-      // 需要来一个简易diff算法进行比对，删除name或者age 不存在的值
-      // 每次执行的时候都清理掉收集的
-      effect(() => {
-        console.log("run~");
-        app.innerHTML = state.flag ? `姓名${state.name}` : `年龄${state.age}`;
-      });
+      // // {obj:{flag:{effect}, name:{flag}}}
+      // //  {obj:{flag:{effect}, name:{flag}, age:{flag}}}
+      // // 不需要收集name，需要把name给清理掉
+      // // 需要来一个简易diff算法进行比对，删除name或者age 不存在的值
+      // // 每次执行的时候都清理掉收集的
+      // let runner = effect(
+      //   () => {
+      //     console.log("run~");
+      //     app.innerHTML = state.flag ? `姓名${state.name}` : `年龄${state.age}`;
+      //   },
+      //   {
+      //     // 调度器，可以控制如何去调度执行
+      //     scheduler: () => {
+      //       runner();
+      //       console.log("scheduler，数据更新了，补充下渲染走自己的逻辑");
+      //     },
+      //   }
+      // );
+
+      /**
+       * 递归调用模式starting
+       */
+      // effect(() => {
+      //   // 这样就无穷无极了， name更新了，又要执行上方的内容，那么又更新了
+      //   // 需要屏蔽，如何当前值正在执行，则不调用
+      //   app.innerHTML = state.address.n;
+      //   // state.name = Math.random();
+      // });
+      // /**
+      //  * 递归调用模式ending
+      //  */
+
+      // // effect(() => {
+      // //   app.innerHTML = `第二次:姓名${state.name}`;
+      // // });
+
+      // setTimeout(() => {
+      //   state.address.n = "北京"; // 更新多层属性时候的情况
+      //   // state.flag = false;
+
+      //   // 重新渲染，当数据变化则需要执行
+      //   // _effect.run();
+      //   // setTimeout(() => {
+      //   //   console.log("设置了name，name不监听状态");
+      //   //   state.name = "xiaoming";
+      //   // });
+      // }, 1000);
+
+      // ref 实现
+      // const flag = ref(false);
 
       // effect(() => {
-      //   app.innerHTML = `第二次:姓名${state.name}`;
+      //   app.innerHTML = flag.value ? "姓名" : "年龄";
       // });
 
-      setTimeout(() => {
-        state.flag = false;
-        // 重新渲染，当数据变化则需要执行
-        // _effect.run();
-        setTimeout(() => {
-          console.log("设置了name，name不监听状态");
-          state.name = "xiaoming";
-        });
-      }, 1000);
+      // toref torefs
+      let state2 = reactive({ name: "qq", age: 11 });
 
+      let name = toRef(state2, "name");
+      let age = toRef(state2, "age");
+      let refsObj = toRefs(state2);
+      let proxyobj = proxyRefs({ ...refsObj, a: 1 });
+      console.log(name, age.value);
+      console.log(refsObj, "refsObj");
+      console.log(proxyobj, proxyobj.age, proxyobj.a, "proxyobj");
+      // setTimeout(() => {
+      //   flag.value = !flag.value;
+      // }, 1000);
       /**
        *  try {
        *    activeEffect = this;
