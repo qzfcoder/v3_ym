@@ -21,7 +21,36 @@
         toRef,
         toRefs,
         proxyRefs,
+        computed,
       } from "./reactivity.js";
+      // computed
+
+      // computed执行后的结果是一个ref 不可变的
+      const state = reactive({ name: "js" });
+
+      // 会存在一个dirty变量  dirty改成false ，会去上一次的返回值
+      const aliasName = computed({
+        get(oldValue) {
+          console.log("runner", oldValue);
+          return state.name + "js";
+        },
+        set() {
+          console.log("set"); // aliasName.value 赋值新值后改变的
+        },
+      });
+      // 多次访问该属性指挥执行一次
+      effect(() => {
+        console.log(aliasName.value, 1);
+        console.log(aliasName.value, 2);
+      });
+      setTimeout(() => {
+        state.name = "123"; // 会把dirty再次改为true
+      }, 1000);
+
+      // 计算属性也是一个effect，依赖的属性会收集这个计算数学，当前值变化后，会让computed中effect变为true
+      //
+      // computed ending
+
       /**
        *  reactive 让数据变成响应式的
        * effect 副作用函数，让数据变化后可以让effect重写执行，组件、watch等都市通过这个来执行的
@@ -30,14 +59,14 @@
        * 分析
        *  传入的是一个对象
        */
-      let obj = {
-        name: "qqq",
-        age: 18,
-        flag: true,
-        address: { n: "as " },
-      };
+      // let obj = {
+      //   name: "qqq",
+      //   age: 18,
+      //   flag: true,
+      //   address: { n: "as " },
+      // };
 
-      let state = reactive(obj);
+      // let state = reactive(obj);
 
       // // 防止代理过代理多次问题 start=======
       // // 创建两次，不需要重新创建
@@ -109,16 +138,16 @@
       //   app.innerHTML = flag.value ? "姓名" : "年龄";
       // });
 
-      // toref torefs
-      let state2 = reactive({ name: "qq", age: 11 });
+      // // toref torefs
+      // let state2 = reactive({ name: "qq", age: 11 });
 
-      let name = toRef(state2, "name");
-      let age = toRef(state2, "age");
-      let refsObj = toRefs(state2);
-      let proxyobj = proxyRefs({ ...refsObj, a: 1 });
-      console.log(name, age.value);
-      console.log(refsObj, "refsObj");
-      console.log(proxyobj, proxyobj.age, proxyobj.a, "proxyobj");
+      // let name = toRef(state2, "name");
+      // let age = toRef(state2, "age");
+      // let refsObj = toRefs(state2);
+      // let proxyobj = proxyRefs({ ...refsObj, a: 1 });
+      // console.log(name, age.value);
+      // console.log(refsObj, "refsObj");
+      // console.log(proxyobj, proxyobj.age, proxyobj.a, "proxyobj");
       // setTimeout(() => {
       //   flag.value = !flag.value;
       // }, 1000);

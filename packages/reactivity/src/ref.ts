@@ -33,7 +33,7 @@ class RefImpl {
   }
 }
 
-function trackRefValue(ref) {
+export function trackRefValue(ref) {
   if (activeEffect) {
     trackEffect(
       activeEffect,
@@ -41,7 +41,7 @@ function trackRefValue(ref) {
     );
   }
 }
-function triggerRefValue(ref) {
+export function triggerRefValue(ref) {
   let dep = ref.dep;
   if (dep) {
     // 触发依赖更新

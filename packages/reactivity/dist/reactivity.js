@@ -35,12 +35,21 @@ var ReactiveEffect = class {
     this._trackId = 0;
     this.deps = [];
     this._depsLength = 0;
+    this._dirtyLevel = 4 /* Dirty */;
+    // 默认是脏的
     this.active = true;
     // 创建的effect 是响应式的
     this._running = 0;
   }
+  get dirty() {
+    return this._dirtyLevel === 4 /* Dirty */;
+  }
+  set dirty(value) {
+    this._dirtyLevel = value ? 4 /* Dirty */ : 0 /* NoDirty */;
+  }
   //   让fn执行
   run() {
+    this._dirtyLevel = 0 /* NoDirty */;
     if (!this.active) {
       console.log("\u6267\u884C\u4E86");
       return this.fn();
@@ -82,6 +91,9 @@ function trackEffect(effect2, dep) {
 }
 function triggerEffects(dep) {
   for (const effect2 of dep.keys()) {
+    if (effect2._dirtyLevel < 4 /* Dirty */) {
+      effect2._dirtyLevel = 4 /* Dirty */;
+    }
     if (!effect2._running) {
       if (effect2.scheduler) {
         effect2.scheduler();
@@ -93,6 +105,9 @@ function triggerEffects(dep) {
 // packages/shared/src/index.ts
 function isObject(value) {
   return typeof value === "object" && value !== null;
+}
+function isFunction(value) {
+  return typeof value === "function";
 }
 
 // packages/reactivity/src/reactiveEffect.ts
@@ -261,8 +276,48 @@ function proxyRefs(objectWithRef) {
     }
   });
 }
+
+// packages/reactivity/src/computed.ts
+var ComputedRefImpl = class {
+  constructor(getter, setter) {
+    this.setter = setter;
+    this.effect = new ReactiveEffect(
+      () => getter(this._value),
+      () => {
+        triggerRefValue(this);
+      }
+    );
+  }
+  get value() {
+    if (this.effect.dirty) {
+      this._value = this.effect.run();
+      trackRefValue(this);
+    }
+    return this._value;
+  }
+  set value(v) {
+    this.setter(v);
+  }
+};
+function computed(getterOrOptions) {
+  let onlyGetter = isFunction(getterOrOptions);
+  let getter;
+  let setter;
+  if (onlyGetter) {
+    getter = getterOrOptions;
+    setter = () => {
+    };
+  } else {
+    getter = getterOrOptions.get;
+    setter = getterOrOptions.set;
+  }
+  console.log(getter, setter);
+  return new ComputedRefImpl(getter, setter);
+}
 export {
+  ReactiveEffect,
   activeEffect,
+  computed,
   effect,
   proxyRefs,
   reactive,
@@ -271,6 +326,8 @@ export {
   toRef,
   toRefs,
   trackEffect,
-  triggerEffects
+  trackRefValue,
+  triggerEffects,
+  triggerRefValue
 };
 //# sourceMappingURL=reactivity.js.map

@@ -2,10 +2,7 @@ import { isObject } from "@vue/shared";
 import { activeEffect } from "./effect";
 import { track, trigger } from "./reactiveEffect";
 import { reactive } from "./reactive";
-
-export enum ReactiveFlags {
-  IS_REACTIVE = "__v_isReactive",
-}
+import { ReactiveFlags } from "./constance";
 
 /**
  * 为什么一定要用Reflect来进行get 和set返回和设置数据

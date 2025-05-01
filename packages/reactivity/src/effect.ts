@@ -1,3 +1,5 @@
+import { DirtyLevels } from "./constance";
+
 //  options?可选参数意味着在调用函数时，这个参数可以被传入，也可以不被传入。如果不传入该参数，它的值就是 undefined。
 export function effect(fn, options?) {
   // 创建一个响应式的effect，数据变化后会重新执行effect
@@ -37,18 +39,28 @@ function postCleanEffect(effect) {
 // 当前响应式函数
 export let activeEffect;
 
-class ReactiveEffect {
+export class ReactiveEffect {
   _trackId = 0;
   deps = [];
   _depsLength = 0;
+  _dirtyLevel = DirtyLevels.Dirty; // 默认是脏的
   public active = true; // 创建的effect 是响应式的
   _running = 0;
   // fn用户编写的函数
   // scheduler 用户依赖数据发生变化后，需要重新调用的函数
   // 在构造函数参数前添加 public 关键字，不但定义了公共属性，还在创建类的实例时把传入的参数值赋给了这些属性。
   constructor(public fn, public scheduler) {}
+
+  public get dirty() {
+    return this._dirtyLevel === DirtyLevels.Dirty;
+  }
+  public set dirty(value) {
+    this._dirtyLevel = value ? DirtyLevels.Dirty : DirtyLevels.NoDirty;
+  }
+
   //   让fn执行
   run() {
+    this._dirtyLevel = DirtyLevels.NoDirty; // 每次运行后effect变为NoDirty
     if (!this.active) {
       console.log("执行了");
       return this.fn();
@@ -120,8 +132,12 @@ export function triggerEffects(dep) {
   //     effect.run();
   //   }
   // });
+
   // 执行副作用函数
   for (const effect of dep.keys()) {
+    if (effect._dirtyLevel < DirtyLevels.Dirty) {
+      effect._dirtyLevel = DirtyLevels.Dirty; // 将数据变脏
+    }
     if (!effect._running) {
       if (effect.scheduler) {
         // 不是正在执行，才能执行
