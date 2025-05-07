@@ -22,30 +22,60 @@
         toRefs,
         proxyRefs,
         computed,
+        watch,
+        watchEffect,
       } from "./reactivity.js";
+
+      // watchEffect
+      // const state = reactive({ name: "js", age: 30, address: { n: 1 } });
+      // watchEffect(() => {
+      //   console.log(state.name, state.age);
+      // });
+
+      // setTimeout(() => {
+      //   state.name = "newnewnew";
+      // }, 1000);
+
+      // watch
+      const state = reactive({ name: "js", age: 30, address: { n: 1 } });
+      const unWatch = watch(
+        state,
+        function (oldValue, newValue, onCleanup) {
+          console.log(oldValue, newValue);
+        },
+        {
+          depth: 1,
+        }
+      );
+      setTimeout(() => {
+        state.name = "newnewnew";
+      }, 1000);
+
+      unWatch();
+
       // computed
 
-      // computed执行后的结果是一个ref 不可变的
-      const state = reactive({ name: "js" });
+      // // computed执行后的结果是一个ref 不可变的
+      // const state = reactive({ name: "js" });
 
-      // 会存在一个dirty变量  dirty改成false ，会去上一次的返回值
-      const aliasName = computed({
-        get(oldValue) {
-          console.log("runner", oldValue);
-          return state.name + "js";
-        },
-        set() {
-          console.log("set"); // aliasName.value 赋值新值后改变的
-        },
-      });
-      // 多次访问该属性指挥执行一次
-      effect(() => {
-        console.log(aliasName.value, 1);
-        console.log(aliasName.value, 2);
-      });
-      setTimeout(() => {
-        state.name = "123"; // 会把dirty再次改为true
-      }, 1000);
+      // // 会存在一个dirty变量  dirty改成false ，会去上一次的返回值
+      // const aliasName = computed({
+      //   get(oldValue) {
+      //     console.log("runner", oldValue);
+      //     return state.name + "js";
+      //   },
+      //   set() {
+      //     console.log("set"); // aliasName.value 赋值新值后改变的
+      //   },
+      // });
+      // // 多次访问该属性指挥执行一次
+      // effect(() => {
+      //   console.log(aliasName.value, 1);
+      //   console.log(aliasName.value, 2);
+      // });
+      // setTimeout(() => {
+      //   state.name = "123"; // 会把dirty再次改为true
+      // }, 1000);
 
       // 计算属性也是一个effect，依赖的属性会收集这个计算数学，当前值变化后，会让computed中effect变为true
       //
