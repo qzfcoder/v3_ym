@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      /***
+       *  1、cretaeRenderer 我们可以自己创建渲染器，我们自己提供渲染的方法
+       * 2、render 用内置的渲染器来进行渲染
+       * 3、h方法可以创建一个虚拟dom  参数：标签，属性，子节点  type  propsOrChildren  children
+       */
+      import { h, createRenderer, render } from "./runtime-dom.js";
+
+      let ele = h("h1", "内容部分");
+
+      let root = document.querySelector("#app");
+      //   render(ele, root); // 渲染到页面中
+
+      //   createRenderer
+      const render = createRenderer({
+        createElement(type) {
+          // 创建一个元素
+          console.log(type, "type");
+          return document.createElement(type);
+        },
+        setElementText(el, text) {
+          // 设置元素的文本
+          el.textContent = text;
+        },
+        insert(el, container) {
+          // 插入到父元素中
+          container.appendChild(el);
+        },
+      });
+      render(ele, root);
+    </script>
+  </body>
+</html>
